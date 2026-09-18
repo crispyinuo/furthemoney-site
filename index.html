@@ -120,18 +120,8 @@
     position:absolute; left:0; right:0; bottom:0; height:64px;
     background:linear-gradient(180deg, transparent, rgba(186,92,51,.07));
   }
-  .walker{position:absolute; bottom:6px; left:8px; width:78px;}
+  .walker{position:absolute; bottom:6px; left:0; width:78px; transform-origin:50% 100%; will-change:transform;}
   .walker img{display:block; width:100%;}
-  @media (prefers-reduced-motion: no-preference){
-    .walker{animation:pace 16s linear infinite;}
-  }
-  @keyframes pace{
-    0%{left:8px; transform:scaleX(1);}
-    46%{left:calc(100% - 94px); transform:scaleX(1);}
-    50%{left:calc(100% - 94px); transform:scaleX(-1);}
-    96%{left:8px; transform:scaleX(-1);}
-    100%{left:8px; transform:scaleX(1);}
-  }
 
   /* ---- pay card, mimicking the app's earnings panel ---- */
   .paycard{
@@ -371,13 +361,78 @@
   (function () {
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* Walk cycle: eight frames from the app's own sprite sheet. */
+    /* The cat paces the floor: eight walk frames from the app's own sprite
+       sheet, and a turn on the spot at each end rather than a mirror flip. */
     var frames = [];
     for (var i = 0; i < 8; i++) { var im = new Image(); im.src = 'img/walk-' + i + '.png'; frames.push(im.src); }
     var walkframe = document.getElementById('walkframe');
-    if (!reduce) {
-      var f = 0;
-      setInterval(function () { f = (f + 1) % 8; walkframe.src = frames[f]; }, 120);
+    var walker = document.querySelector('.walker');
+    var stage = document.querySelector('.stage');
+
+    if (!reduce && walker && stage) {
+      var SPEED = 34;          // px per second
+      var FPS = 8.5;           // walk frames per second
+      var SETTLE = 380;        // ms of standing still before the turn
+      var TURN = 620;          // ms to come about
+      var LEAD = 260;          // ms of standing still after it
+
+      var x = 10, dir = 1, facing = 1, frame = 0, frameClock = 0;
+      var phase = 'walk', phaseClock = 0, last = 0;
+
+      function span() { return Math.max(60, stage.clientWidth - walker.offsetWidth - 20); }
+
+      function draw(bob) {
+        walker.style.transform = 'translate(' + x.toFixed(1) + 'px,' + (bob || 0).toFixed(1) +
+          'px) scaleX(' + facing.toFixed(3) + ')';
+      }
+
+      function step(now) {
+        var dt = last ? Math.min(now - last, 60) : 0;
+        last = now;
+
+        if (phase === 'walk') {
+          x += dir * SPEED * (dt / 1000);
+          frameClock += dt;
+          if (frameClock > 1000 / FPS) {
+            frameClock = 0;
+            frame = (frame + 1) % 8;
+            walkframe.src = frames[frame];
+          }
+          var far = span();
+          if (x >= far || x <= 10) {
+            x = Math.min(Math.max(x, 10), far);
+            phase = 'settle'; phaseClock = 0;
+            frame = 0; walkframe.src = frames[0];
+          }
+          draw(0);
+        } else {
+          phaseClock += dt;
+          if (phase === 'settle') {
+            draw(0);
+            if (phaseClock >= SETTLE) { phase = 'turn'; phaseClock = 0; }
+          } else if (phase === 'turn') {
+            /* Width narrows to nothing and opens out the other way, with a
+               small dip in the middle: a pivot, not a flip. */
+            var p = Math.min(phaseClock / TURN, 1);
+            var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+            facing = dir * Math.cos(Math.PI * eased);
+            draw(Math.sin(Math.PI * eased) * 2.5);
+            if (p >= 1) {
+              dir = -dir; facing = dir;
+              phase = 'lead'; phaseClock = 0;
+              draw(0);
+            }
+          } else if (phase === 'lead') {
+            draw(0);
+            if (phaseClock >= LEAD) { phase = 'walk'; phaseClock = 0; frameClock = 0; }
+          }
+        }
+        requestAnimationFrame(step);
+      }
+      draw(0);
+      requestAnimationFrame(step);
+    } else if (walker) {
+      walker.style.transform = 'translateX(10px)';
     }
 
     /* Example earnings, ticking against an example 09:00-17:30 day. */
