@@ -120,8 +120,15 @@
     position:absolute; left:0; right:0; bottom:0; height:64px;
     background:linear-gradient(180deg, transparent, rgba(186,92,51,.07));
   }
-  .walker{position:absolute; bottom:6px; left:0; width:78px; will-change:transform;}
-  .walker img{display:block; width:100%;}
+  .walker{position:absolute; bottom:6px; left:0; width:78px; aspect-ratio:1; will-change:transform;}
+  .walker img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain;}
+  .walker .pose{opacity:0; transition:opacity .2s ease;}
+  .walker.facing .pose{opacity:1;}
+  .walker.facing .gait{opacity:0;}
+  .walker .gait{opacity:1; transition:opacity .2s ease;}
+  @media (prefers-reduced-motion: reduce){
+    .walker .pose, .walker .gait{transition:none;}
+  }
 
   /* ---- pay card, mimicking the app's earnings panel ---- */
   .paycard{
@@ -240,7 +247,10 @@
     <div class="stage">
       <img class="office" src="img/office.jpg" alt="An illustrated three-storey office: reception and the front door downstairs, a meeting table and private office in the middle, the printer, coffee station and workstation on top.">
       <div class="floor" aria-hidden="true"></div>
-      <div class="walker" aria-hidden="true"><img id="walkframe" src="img/walk-0.png" alt=""></div>
+      <div class="walker" aria-hidden="true">
+        <img class="gait" id="walkframe" src="img/walk-0.png" alt="">
+        <img class="pose" id="restframe" src="img/cat-idle.png" alt="">
+      </div>
     </div>
   </div>
 
@@ -361,9 +371,10 @@
   (function () {
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* The cat walks the floor: eight frames from the app's own sprite sheet.
-       It only ever walks to the right - off one end, back on at the other -
-       so the sprite is never mirrored. */
+    /* The cat paces the office floor on the app's own eight-frame walk cycle.
+       At each end it stops and turns to face the reader - the front-facing
+       idle pose - and the walk sprite swaps direction behind it, so the turn
+       never shows as a mirror flip. */
     var frames = [];
     for (var i = 0; i < 8; i++) { var im = new Image(); im.src = 'img/walk-' + i + '.png'; frames.push(im.src); }
     var walkframe = document.getElementById('walkframe');
@@ -371,32 +382,58 @@
     var stage = document.querySelector('.stage');
 
     if (!reduce && walker && stage) {
-      var SPEED = 34;   // px per second
-      var FPS = 8.5;    // walk frames per second
+      var SPEED = 32;    // px per second
+      var FPS = 8.5;     // walk frames per second
+      var FACE = 900;    // ms spent facing the reader at each end
+      var MARGIN = 12;
 
-      var x = 10, frame = 0, frameClock = 0, last = 0;
+      var x = MARGIN, dir = 1, frame = 0, frameClock = 0, last = 0;
+      var facing = false, faceClock = 0;
+
+      function far() { return Math.max(MARGIN, stage.clientWidth - walker.offsetWidth - MARGIN); }
+      function place() {
+        /* Only the walk sprite turns; the front-facing pose is never mirrored,
+           so the cat looks the same at both ends of the floor. */
+        walker.style.transform = 'translateX(' + x.toFixed(1) + 'px)';
+        walkframe.style.transform = 'scaleX(' + dir + ')';
+      }
 
       function step(now) {
         var dt = last ? Math.min(now - last, 60) : 0;
         last = now;
 
-        x += SPEED * (dt / 1000);
-        if (x > stage.clientWidth + 8) { x = -walker.offsetWidth - 8; }
-
-        frameClock += dt;
-        if (frameClock > 1000 / FPS) {
-          frameClock = 0;
-          frame = (frame + 1) % 8;
-          walkframe.src = frames[frame];
+        if (facing) {
+          faceClock += dt;
+          if (faceClock >= FACE) {
+            facing = false;
+            dir = -dir;           /* the walk sprite turns while it is hidden */
+            frame = 0; frameClock = 0;
+            walkframe.src = frames[0];
+            place();
+            walker.classList.remove('facing');
+          }
+        } else {
+          x += dir * SPEED * (dt / 1000);
+          var edge = far();
+          if (x >= edge || x <= MARGIN) {
+            x = Math.min(Math.max(x, MARGIN), edge);
+            facing = true; faceClock = 0;
+            walker.classList.add('facing');
+          }
+          frameClock += dt;
+          if (frameClock > 1000 / FPS) {
+            frameClock = 0;
+            frame = (frame + 1) % 8;
+            walkframe.src = frames[frame];
+          }
+          place();
         }
-
-        walker.style.transform = 'translateX(' + x.toFixed(1) + 'px)';
         requestAnimationFrame(step);
       }
-      walker.style.transform = 'translateX(10px)';
+      place();
       requestAnimationFrame(step);
     } else if (walker) {
-      walker.style.transform = 'translateX(10px)';
+      walker.style.transform = 'translateX(12px)';
     }
 
     /* Example earnings, ticking against an example 09:00-17:30 day. */
