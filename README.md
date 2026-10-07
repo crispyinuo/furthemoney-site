@@ -17,7 +17,8 @@ python3 -m http.server
   the example earnings and cycles the cat's walk frames
 - `privacy.html` / `privacy-zh-Hans.html` — privacy policies
 - `support.html` / `support-zh-Hans.html` — help and contact
-- `legal.css` — shared styles for policy and help pages
+- `legal.css` — shared paper texture, typography, responsive reading layout and navigation for policy and help pages
+- `fonts/` — locally served subsets of the app’s Baloo 2 and WenKai fonts, with their OFL licenses
 - `img/` — artwork lifted from the app and downscaled for the web: the office
   illustration, the eight-frame walk cycle, two resting cat poses, the paper
   texture and the app icon
