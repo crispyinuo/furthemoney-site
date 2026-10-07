@@ -1,4 +1,10 @@
 @font-face {
+  font-family: "Courier Prime";
+  src: url("fonts/courier-prime.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
   font-family: "Baloo 2";
   src: url("fonts/baloo-2.woff") format("woff");
   font-weight: 400 800;
@@ -62,10 +68,12 @@ a:hover { text-decoration-thickness: 2px; }
 a:focus-visible { outline: 3px solid var(--olive); outline-offset: 5px; border-radius: 3px; }
 .skip-link { position: absolute; left: 24px; top: -100px; z-index: 2; padding: 12px 20px; background: var(--card); }
 .skip-link:focus { top: 12px; }
-.masthead { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 94px; border-bottom: 1px solid var(--line); }
-.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); flex-shrink: 0; }
-.brand img { object-fit: contain; }
-.brand b { display: block; font-size: 1.25rem; font-weight: 600; letter-spacing: -.025em; line-height: 1.2; }
+.masthead { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 22px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; }
+.brand img { width: 44px; height: 44px; border-radius: 11px; box-shadow: 0 2px 8px var(--shadow); }
+.brand b { font-size: 1.18rem; font-weight: 700; }
+.brand span { display: block; font-size: .82rem; color: var(--ink-soft); line-height: 1.2; }
+.ship { font-family: "Courier Prime", ui-monospace, monospace; font-size: .8rem; color: var(--ink-soft); border: 1px dashed var(--line); border-radius: 999px; padding: 6px 14px; }
 .site-nav { display: flex; align-items: center; gap: 8px; font-size: .95rem; }
 .site-nav a { color: var(--ink-soft); text-decoration: none; padding: 7px 16px; border: 1px solid transparent; border-radius: 9px; }
 .site-nav a:hover { color: var(--ink); background: var(--card); }
@@ -108,10 +116,6 @@ footer a { color: var(--ink-soft); text-decoration: none; }
 }
 @media (max-width: 640px) {
   .page { padding-inline: 20px; }
-  .masthead { flex-wrap: wrap; justify-content: center; gap: 14px; padding: 18px 0; }
-  .brand { width: 100%; justify-content: center; gap: 8px; }
-  .brand img { width: 38px; height: 38px; }
-  .brand b { font-size: 1.15rem; }
   .site-nav { gap: 6px; justify-content: center; }
   .site-nav a { padding: 5px 14px; }
   .site-nav .language { margin-left: 8px; padding-left: 16px; }
